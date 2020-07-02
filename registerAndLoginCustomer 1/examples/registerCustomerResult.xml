@@ -1,0 +1,5 @@
+<result>
+	<status>"SUCCESS"</status>
+	<message>"Some message"</message>
+	<custId>1</custId>
+</result>

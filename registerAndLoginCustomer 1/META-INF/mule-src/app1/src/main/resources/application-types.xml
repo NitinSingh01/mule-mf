@@ -1,0 +1,96 @@
+<?xml version='1.0' encoding='UTF-8'?>
+<types:mule xmlns:types="http://www.mulesoft.org/schema/mule/types">
+  <types:catalog>
+    <types:type name="cutomer_data_json" format="json">
+      <types:shape format="weave" example="examples/customer.json"><![CDATA[%dw 2.0
+
+type cutomer_data_json = {|
+  firstName: String, 
+  lastName: String, 
+  email: String, 
+  age: Number {"typeId": "int"}, 
+  uid: String, 
+  address: String, 
+  city: String, 
+  state: String, 
+  zipcode: String, 
+  password: String
+|} {"example": "{\\\"firstName\\\":\\\"Nitin\\\",\\\"lastName\\\":\\\"Singh\\\",\\\"email\\\":\\\"14nitinsingh@gmail.com\\\",\\\"age\\\":26,\\\"uid\\\":\\\"ITLIN786ITP\\\",\\\"address\\\":\\\"Infosys Limited\\\",\\\"city\\\":\\\"Chandigarh\\\",\\\"state\\\":\\\"Chandigarh\\\",\\\"zipcode\\\":\\\"675849\\\",\\\"password\\\":\\\"Tri@123\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="validator_input" format="json">
+      <types:shape format="weave" example="examples/validator_input.json"><![CDATA[%dw 2.0
+
+type validator_input = {|
+  FirstName: String, 
+  LastName: String, 
+  UID: String
+|} {"example": "{\\\"FirstName\\\":\\\"Nitin\\\",\\\"LastName\\\":\\\"Singh\\\",\\\"UID\\\":\\\"ITLIN786ITP\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="register_result_xml" format="xml">
+      <types:example format="xml" element="result" location="examples/registerCustomerResult.xml"/>
+    </types:type>
+    <types:type name="kafka_input" format="json">
+      <types:shape format="weave" example="examples/kafkaInput.json"><![CDATA[%dw 2.0
+
+type kafka_input = {|
+  first_Name: String, 
+  email: String, 
+  cust_ID: Number {"typeId": "int"}, 
+  password: String
+|} {"example": "{\\\"first_Name\\\":\\\"Nitin\\\",\\\"email\\\":\\\"14nitinsingh@gmail.com\\\",\\\"cust_ID\\\":2,\\\"password\\\":\\\"TYHUJI2323\\\"}"}
+
+]]></types:shape>
+    </types:type>
+    <types:type name="register_result_json" format="json">
+      <types:shape format="weave" example="examples/registerCustomerResult.json"><![CDATA[%dw 2.0
+
+type register_result_json = {|
+  status: String, 
+  message: String, 
+  custId: Number {"typeId": "int"}
+|} {"example": "{\\\"status\\\":\\\"SUCCESS\\\",\\\"message\\\":\\\"Some message\\\",\\\"custId\\\":1}"}
+
+]]></types:shape>
+    </types:type>
+  </types:catalog>
+  <types:enrichment select="#99374a86-f786-40be-828b-cdb1767b5056">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="validator_input"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#ee5d5c01-302c-4a19-a769-81f8343c3db5">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="cutomer_data_json"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#a7c8d719-2e43-4b94-b1b2-9d98c793adbb">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="kafka_input"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+  <types:enrichment select="#56d7e665-e124-4bc4-9bbe-d44b88926ce3">
+    <types:processor-declaration>
+      <types:output-event>
+        <types:message>
+          <types:payload type="register_result_json"/>
+        </types:message>
+      </types:output-event>
+    </types:processor-declaration>
+  </types:enrichment>
+</types:mule>
