@@ -1,1 +1,187 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:wsc="http://www.mulesoft.org/schema/mule/wsc" xmlns:kafka="http://www.mulesoft.org/schema/mule/kafka"
+	xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd
+http://www.mulesoft.org/schema/mule/kafka http://www.mulesoft.org/schema/mule/kafka/current/mule-kafka.xsd
+http://www.mulesoft.org/schema/mule/wsc http://www.mulesoft.org/schema/mule/wsc/current/mule-wsc.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="e07cd714-95ed-4424-8a5b-1dd120e78e7a" >
+		<http:listener-connection host="0.0.0.0" port="8081" />
+	</http:listener-config>
+	<kafka:producer-config name="Apache_Kafka_Producer_configuration" doc:name="Apache Kafka Producer configuration" doc:id="d742a6fd-7a8a-4b66-8097-385c156f6483" >
+		<kafka:producer-plaintext-connection >
+			<kafka:bootstrap-servers >
+				<kafka:bootstrap-server value="34.94.220.220:9092" />
+			</kafka:bootstrap-servers>
+		</kafka:producer-plaintext-connection>
+	</kafka:producer-config>
+	<wsc:config name="Web_Service_Consumer_Config" doc:name="Web Service Consumer Config" doc:id="896e2822-1d3a-44b2-b02e-cc48b772911e" >
+		<wsc:connection wsdlLocation="http://35.188.208.5:8080/ws/customers.wsdl" service="CustomersPortService" port="CustomersPortSoap11" address="http://35.225.214.240:8080/ws">
+			<wsc:web-service-security actor="http://schemas.xmlsoap.org/soap/actor/next" />
+		</wsc:connection>
+	</wsc:config>
+	<http:request-config name="HTTP_Request_configuration" doc:name="HTTP Request configuration" doc:id="7e81779b-e8d7-466f-95e6-e84987650e7c" >
+		<http:request-connection host="34.67.92.206" port="8080" />
+	</http:request-config>
+	<sub-flow name="customerSubFlow" doc:id="90f798d1-5f44-458d-850e-7e8a8cd09dcf" >
+		<set-variable value="#[payload.firstName]" doc:name="firstName" doc:id="5d9e8632-e34c-45e1-b487-2e40c5ccd78c" variableName="firstName"/>
+		<set-variable value="#[payload.lastName]" doc:name="lastName" doc:id="a5ea56b9-602d-4a9c-82c8-09466b497196" variableName="lastName"/>
+		<set-variable value="#[payload.email]" doc:name="email" doc:id="4b36ed57-e380-48cc-a5b6-55ac5ab15ce8" variableName="email"/>
+		<set-variable value="#[payload.age]" doc:name="age" doc:id="07d56229-2511-4f73-9bd8-e8b854da8386" variableName="age"/>
+		<set-variable value="#[payload.uid]" doc:name="uid" doc:id="9fe8cb2f-8811-46f0-9f0b-eeb4863c4a82" variableName="uid"/>
+		<set-variable value="#[payload.password]" doc:name="password" doc:id="2c8e3bc7-c3e9-408a-8fb8-743da9bd566e" variableName="password"/>
+	</sub-flow>
+	<sub-flow name="addressSubFlow" doc:id="c8da4f4f-e2fc-401a-9197-ed5524cb5ee7" >
+		<set-variable value="#[payload.address]" doc:name="address" doc:id="798265e2-64a5-43a2-bfcc-99aacb2d5129" variableName="address" />
+		<set-variable value="#[payload.city]" doc:name="city" doc:id="4f82c2cd-ba84-4b06-a8d7-97dc4c65ec69" variableName="city" />
+		<set-variable value="#[payload.state]" doc:name="state" doc:id="89b8785f-78a3-4645-afea-7920b75dc9d7" variableName="state" />
+		<set-variable value="#[payload.zipcode]" doc:name="zipcode" doc:id="18c797de-5487-4e60-8305-873ccf2204e9" variableName="zipcode" />
+		<ee:transform doc:name="Transform Message" doc:id="99374a86-f786-40be-828b-cdb1767b5056">
+			<ee:message>
+				<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	FirstName: vars.firstName,
+	LastName: vars.lastName,
+	UID: vars.uid
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</sub-flow>
+	<sub-flow name="registerCustomerSubFlow" doc:id="8d6d7257-e24b-4d44-9c08-ee560466ef23" >
+		<ee:transform doc:name="Customer Details (to be registered)" doc:id="16e5a126-13ae-404c-8433-2a8b14788845">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://104.198.247.236:8080/customers-ws
+---
+{
+	ns0#addCustomerRequest: {
+		ns0#customerType: {
+			ns0#firstName: vars.firstName,
+			ns0#lastName: vars.lastName,
+			ns0#email: vars.email,
+			ns0#age: vars.age,
+			ns0#uid: vars.uid,
+			ns0#address: vars.address,
+			ns0#city: vars.city,
+			ns0#state: vars.state,
+			ns0#zipcode: vars.zipcode,
+			ns0#password: vars.password
+		}
+	}
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+		<wsc:consume doc:name="Register Customer with Mainframe" doc:id="42f5cea4-03bf-49c9-b22c-ed5999f2e95a" config-ref="Web_Service_Consumer_Config" operation="addCustomer" />
+		<ee:transform doc:name="Response" doc:id="56d7e665-e124-4bc4-9bbe-d44b88926ce3" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://104.198.247.236:8080/customers-ws
+---
+{
+	status: payload.body.ns0#addCustomerResponse.ns0#serviceStatus.ns0#statusCode default "",
+	message: payload.body.ns0#addCustomerResponse.ns0#serviceStatus.ns0#message default "",
+	custId: payload.body.ns0#addCustomerResponse.ns0#customerType.ns0#custId default 0
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="036418c2-cac9-4efa-9783-906904df264f">
+					<when expression="#[payload.status == 'SUCCESS']">
+						<ee:transform doc:name="Registered Customer Details" doc:id="a7c8d719-2e43-4b94-b1b2-9d98c793adbb">
+					<ee:message>
+						<ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	first_Name: vars.firstName,
+	email: vars.email,
+	cust_ID: payload.custId,
+	password: vars.password
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+				<kafka:publish doc:name="Register" doc:id="109850d5-e4ae-46c4-a48f-711cbbe58b59" config-ref="Apache_Kafka_Producer_configuration" topic="CustomerEvents"/>
+				<ee:transform doc:name="Registration Successful" doc:id="55cdd015-8743-4a7b-868b-25479405fc58" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Customer registered"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+					</when>
+					<otherwise>
+				<ee:transform doc:name="Invalid Registration" doc:id="e4f395f1-6613-4599-9d45-1a839055384d" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+"Conflict! Customer already exists"]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+					</otherwise>
+				</choice>
+	</sub-flow>
+	<flow name="validateCustomerFlow" doc:id="d9ec2f32-ae3c-4b9f-ae7b-14c38d56f8b5" >
+		<http:listener doc:name="POST/register" doc:id="ee5d5c01-302c-4a19-a769-81f8343c3db5" config-ref="HTTP_Listener_config" path="/register" allowedMethods="POST" outputMimeType="application/json"/>
+		<flow-ref doc:name="Populate Customer Details" doc:id="975a3ca7-6670-4f92-8310-68e6142a238d" name="customerSubFlow" />
+		<flow-ref doc:name="Populate Address Details" doc:id="b51bb258-738a-4baf-852f-524c98cd074d" name="addressSubFlow"/>
+		<http:request method="POST" doc:name="Validator service" doc:id="cc91b9ad-062e-40c1-b952-ce250214970b" path="/validate" config-ref="HTTP_Request_configuration"/>
+		<ee:transform doc:name="Transform Message" doc:id="bdcadade-8084-4674-a34e-d5bcf6557dcc" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<choice doc:name="Choice" doc:id="b71f9b70-5e7c-437e-8885-51a2d29d3c6d" >
+			<when expression='#[payload=="Validation successful"]'>
+				<flow-ref doc:name="Register Customer" doc:id="02a47ff1-fad3-4bb4-8728-bc1e39066f20" name="registerCustomerSubFlow" />
+			</when>
+			<otherwise >
+				<ee:transform doc:name="Invalid Customer" doc:id="c570ebd6-5ca2-4a48-9d48-107e3ee94686" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+payload]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</otherwise>
+		</choice>
+	</flow>
+	<flow name="loginCustomerFlow" doc:id="02312fb6-9bb0-4f00-aacd-6345cad7b9d9" >
+		<http:listener doc:name="Listener" doc:id="dd16d90e-1482-42ab-ad56-ea201c3073dd" config-ref="HTTP_Listener_config" path="/login"/>
+		<ee:transform doc:name="Login Details" doc:id="c9a3bdba-cc42-4396-8aaf-b85c2e828730" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/xml
+ns ns0 http://104.198.247.236:8080/customers-ws
+---
+{
+	ns0#loginCustomerRequest: {
+		ns0#custId: payload.custId as Number,
+		ns0#password: payload.password
+	}
+}]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+		<wsc:consume doc:name="Login Customer" doc:id="06d80b1e-83bb-4e2c-a38e-da066b0c3a65" config-ref="Web_Service_Consumer_Config" operation="loginCustomer"/>
+		<ee:transform doc:name="Login Response" doc:id="36a8943e-4646-4b0c-9adf-64874592e7fe" >
+			<ee:message >
+				<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+ns ns0 http://104.198.247.236:8080/customers-ws
+---
+payload.body.ns0#loginCustomerResponse.ns0#serviceStatus.ns0#statusCode ++ ". " ++ payload.body.ns0#loginCustomerResponse.ns0#serviceStatus.ns0#message]]></ee:set-payload>
+			</ee:message>
+		</ee:transform>
+	</flow>
+</mule>
 
